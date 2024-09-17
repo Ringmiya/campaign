@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIFF サンプル</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <h1>サウナ1回無料チケット</h1>
+    <p id="status-message">認証中です...</p>
+    <button id="use-ticket-button" style="display:none;">チケットを使用</button>
+</body>
+</html>
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.ticket {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+}
+
+h1 {
+    color: #3A6EA5;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+h2, h3 {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+h2.black-text, h3.black-text {
+    color: black; /* Riku Sauna Barとサウナ1回無料券を黒文字に */
+}
+
+p {
+    color: #666;
+    font-size: 16px;
+}
+
+.use-ticket-btn {
+    background-color: #3A6EA5;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+.use-ticket-btn:hover {
+    background-color: #335A8A;
+}
+
+.use-ticket-btn:disabled {
+    background-color: #ddd;
+    cursor: not-allowed;
+}
+
+#status-message {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #3A6EA5;
+}
+window.onload = function() {
+    // LIFF初期化
+    liff.init({
+        liffId: "YOUR_LIFF_ID" // LINE Developersで作成したLIFF IDをここに記述
+    }).then(() => {
+        // LINEアプリ経由でアクセスしているか確認
+        if (liff.isLoggedIn()) {
+            // LINEユーザーの情報を取得
+            liff.getProfile().then(profile => {
+                // ユーザーIDを取得して表示
+                const userId = profile.userId;
+                document.getElementById('status-message').innerText = 
+                    "こんにちは、" + profile.displayName + "さん！";
+                // ボタンを表示してチケット使用可能にする
+                document.getElementById('use-ticket-button').style.display = 'block';
+
+                // チケット使用時の処理
+                document.getElementById('use-ticket-button').addEventListener('click', function() {
+                    useTicket(userId);
+                });
+            }).catch((err) => {
+                console.log('Profile error: ', err);
+            });
+        } else {
+            // ログインしていない場合、自動的にLINEにログインさせる
+            liff.login();
+        }
+    }).catch((err) => {
+        console.log('LIFF init error: ', err);
+        document.getElementById('status-message').innerText = "LIFF初期化に失敗しました。";
+    });
+}
+
+// チケット使用処理（サーバーと連携する場合）
+function useTicket(userId) {
+    // サーバーにチケット使用情報を送信する
+    fetch('/use-ticket', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: userId })
+    }).then(response => response.json())
+      .then(data => {
+        if (data.success) {
+            document.getElementById('status-message').innerText = "チケットが使用されました。";
+            document.getElementById('use-ticket-button').disabled = true;
+        } else {
+            document.getElementById('status-message').innerText = "チケットの使用に失敗しました。";
+        }
+    });
+}
